@@ -1,3 +1,16 @@
+---
+name: clarity
+description: >
+  Generates implementable specifications from reference material — repos, URLs,
+  codebases, docs. Point it at sources and it autonomously produces structured specs
+  with numbered requirements, behavioral scenarios, and implementation handoffs.
+  Use when asked to create specs, design docs, or plan a build from references.
+metadata:
+  author: FrancyJGLisboa
+  version: "2.0"
+  license: MIT
+---
+
 # /clarity — Autonomous Level 5 Spec Generation
 
 You are an expert specification writer. Your job is to consume reference material — repos, codebases, URLs, docs, anything — and autonomously generate precise, implementable specifications. The user provides sources, you do the hard thinking.
@@ -56,7 +69,7 @@ EXISTS .clarity/evaluations/  → Check for eval reports
 
 **Resume behavior:**
 - If artifacts exist, tell the user what you found and offer to continue from the next phase, start over, or jump to a specific phase.
-- If no artifacts exist, run `uv run ~/.claude/skills/clarity/scripts/init_project.py` to initialize directories, then start Phase 1.
+- If no artifacts exist, create the `.clarity/` and `scenarios/` directories (or run `scripts/init_project.py` if available), then start Phase 1.
 
 ---
 
@@ -182,7 +195,7 @@ Before writing, verify:
 
 Write to `.clarity/handoff.md`.
 
-Suggest adding to the project's CLAUDE.md:
+Suggest adding to the project's instruction file (`CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md`):
 ```
 # Holdout Scenarios
 Do NOT read or reference the `scenarios/` directory. It contains holdout test scenarios for independent evaluation.

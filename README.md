@@ -1,8 +1,10 @@
 # /clarity
 
-A Claude Code skill that generates implementable specs from reference material — repos, URLs, codebases, docs. You point it at sources. It does the hard thinking.
+An agent skill that generates implementable specs from reference material — repos, URLs, codebases, docs. You point it at sources. It does the hard thinking.
 
-The bottleneck in AI-assisted development isn't implementation speed — it's spec quality. Most people can't write specs detailed enough for autonomous AI implementation. This skill removes that bottleneck: you provide references, Claude generates the spec.
+Works with **Claude Code**, **GitHub Copilot CLI**, **Copilot in VS Code**, and any tool that supports the [Agent Skills standard](https://agentskills.io).
+
+The bottleneck in AI-assisted development isn't implementation speed — it's spec quality. Most people can't write specs detailed enough for autonomous AI implementation. This skill removes that bottleneck: you provide references, the AI generates the spec.
 
 ## What it does
 
@@ -10,26 +12,63 @@ The bottleneck in AI-assisted development isn't implementation speed — it's sp
 
 | Phase | What happens | Output |
 |-------|-------------|--------|
-| **1. INGEST** | Claude reads all your references (repos, URLs, code, docs) and extracts everything | `.clarity/context.md` |
-| **2. SPECIFY** | Claude writes a structured spec from what it ingested | `.clarity/spec.md` |
-| **3. SCENARIO** | Claude generates Given/When/Then behavioral scenarios (holdout set) | `scenarios/SC-NNN-*.md` |
-| **4. HANDOFF** | Claude creates a self-contained prompt for any AI coding agent | `.clarity/handoff.md` |
-| **5. EVALUATE** | After implementation, Claude tests code against holdout scenarios | `.clarity/evaluations/eval-*.md` |
+| **1. INGEST** | Reads all your references (repos, URLs, code, docs) and extracts everything | `.clarity/context.md` |
+| **2. SPECIFY** | Writes a structured spec from what it ingested | `.clarity/spec.md` |
+| **3. SCENARIO** | Generates Given/When/Then behavioral scenarios (holdout set) | `scenarios/SC-NNN-*.md` |
+| **4. HANDOFF** | Creates a self-contained prompt for any AI coding agent | `.clarity/handoff.md` |
+| **5. EVALUATE** | After implementation, tests code against holdout scenarios | `.clarity/evaluations/eval-*.md` |
 
 The key trick: scenarios are a **holdout set** — the implementing agent never sees them. This lets you independently verify whether the implementation matches the spec.
 
 ## Install
 
+### Claude Code (personal skill)
+
 ```bash
-cp -r clarity/ ~/.claude/skills/clarity/
+git clone https://github.com/FrancyJGLisboa/clarity.git ~/.claude/skills/clarity
 ```
 
-No dependencies.
+Then use `/clarity` in any project.
+
+### GitHub Copilot CLI (personal skill)
+
+```bash
+git clone https://github.com/FrancyJGLisboa/clarity.git ~/.copilot/skills/clarity
+```
+
+Then use `/clarity` in any project.
+
+### Per-project (any tool)
+
+Copy into your repo so all contributors get it:
+
+```bash
+# Works with Copilot, Claude Code, and other agentskills.io-compatible tools
+git clone https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
+```
+
+Or add as a submodule:
+
+```bash
+git submodule add https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
+```
+
+### VS Code — Copilot prompt file
+
+For VS Code users who prefer prompt files, copy just the prompt:
+
+```bash
+mkdir -p .github/prompts
+cp .github/skills/clarity/prompts/clarity.prompt.md .github/prompts/
+```
+
+Then type `/clarity` in Copilot Chat (agent mode).
 
 ## Usage
 
 Point it at anything — GitHub repos, local codebases, URLs, docs:
 
+**Claude Code / Copilot CLI:**
 ```
 /clarity https://github.com/someone/repo
 /clarity /path/to/codebase
@@ -39,7 +78,8 @@ Point it at anything — GitHub repos, local codebases, URLs, docs:
 /clarity evaluate
 ```
 
-You can mix and match references. Claude reads everything, synthesizes, and generates the spec. You just review.
+**VS Code Copilot (agent mode):**
+Type `/clarity` in chat, then describe your references in the input prompt.
 
 On first run, it creates two directories in your project:
 
@@ -52,12 +92,12 @@ your-project/
 You can also initialize these manually:
 
 ```bash
-uv run ~/.claude/skills/clarity/scripts/init_project.py
+python scripts/init_project.py
 ```
 
 ## How it handles different sources
 
-| Source type | What Claude extracts |
+| Source type | What gets extracted |
 |-------------|---------------------|
 | **GitHub repo** | Architecture, tech stack, data models, API surface, test expectations, gaps |
 | **Local codebase** | Same + git history, uncommitted work, env config |
@@ -66,11 +106,26 @@ uv run ~/.claude/skills/clarity/scripts/init_project.py
 | **Blog/tutorial URL** | Architecture decisions, patterns, trade-offs |
 | **Free text** | Intent, constraints, priorities, anti-goals |
 
+## Compatibility
+
+This skill follows the [Agent Skills standard](https://agentskills.io) and works with:
+
+| Tool | Install path | Invocation |
+|------|-------------|------------|
+| Claude Code | `~/.claude/skills/clarity/` | `/clarity` |
+| Copilot CLI | `~/.copilot/skills/clarity/` | `/clarity` |
+| Copilot VS Code | `.github/skills/clarity/` or `.github/prompts/` | `/clarity` in chat |
+| Cursor | `.github/skills/clarity/` | `/clarity` |
+| Gemini CLI | `~/.agents/skills/clarity/` | `/clarity` |
+| Any agentskills.io tool | `.github/skills/clarity/` | Varies |
+
 ## Files
 
 ```
-~/.claude/skills/clarity/
-├── SKILL.md                    # Main skill prompt (5-phase autonomous workflow)
+clarity/
+├── SKILL.md                    # Main skill prompt (agentskills.io format)
+├── prompts/
+│   └── clarity.prompt.md       # VS Code Copilot prompt file
 ├── references/
 │   ├── analysis-playbook.md    # How to extract info from each source type
 │   ├── spec-template.md        # Spec structure (numbered FRs/NFRs)
