@@ -1,119 +1,117 @@
-# Examples — Before & After
+# Examples — Reference In, Spec Out
 
-These show how `/clarity` transforms vague ideas into implementable specs.
+These show how `/clarity` transforms raw references into implementable specs autonomously.
 
 ---
 
-## Example 1: "I want a weather alert system"
+## Example 1: GitHub repo + intent
 
-### Before (what the user says)
-> "I want something that sends weather alerts to ship captains before they arrive at port."
-
-### After Phase 1 (extracted context)
-- **One-liner**: A system that emails maritime weather forecasts to vessel operators 24-48h before port arrival
-- **Primary user**: Port operations coordinators and ship captains
-- **Core workflow**: System ingests vessel schedule (ETA) → fetches weather forecast for port coordinates at ETA time → generates PDF report → emails to captain and operations team
-- **Key constraints**: Must use free weather APIs; emails via Resend; deployed on Render
-- **Must NOT do**: Real-time tracking, route optimization, cargo management
-- **Success**: Captain receives accurate forecast PDF 24h before arrival
-- **Failure**: Alert not sent (silent failure), forecast wildly inaccurate
-
-### After Phase 2 (spec excerpt)
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-001 | System accepts vessel schedule with port, ETA, and recipient email | MUST |
-| FR-002 | System fetches 48h weather forecast for port coordinates from Open-Meteo API | MUST |
-| FR-003 | System generates PDF summary with wind speed, wave height, visibility, precipitation | MUST |
-| FR-004 | System sends email with PDF attachment 24h before ETA | MUST |
-| FR-005 | System retries failed email delivery up to 3 times with exponential backoff | SHOULD |
-| NFR-001 | Forecast fetch completes in < 5 seconds | SHOULD |
-| NFR-002 | PDF generation completes in < 10 seconds | SHOULD |
-
-### After Phase 3 (scenario excerpt)
+### Input
 ```
-# SC-001: Successful weather alert delivery
-
-> Covers: FR-001, FR-002, FR-003, FR-004
-> Type: Happy Path
-
-## Given
-- Vessel "MV Example" has ETA at Port of Santos (lat: -23.95, lon: -46.30) on 2024-03-15 08:00 UTC
-- Recipient email is captain@example.com
-- Open-Meteo API is available and returning data
-
-## When
-- System checks for upcoming arrivals within 24-48h window
-- Current time is 2024-03-14 08:00 UTC (24h before ETA)
-
-## Then
-- Email is sent to captain@example.com
-- Email subject contains "MV Example" and "Santos"
-- Email has PDF attachment
-- PDF contains wind speed, wave height, visibility for 2024-03-15 06:00-12:00 UTC
-
-## Verification Method
-**Method**: API call + email inspection
-**Steps**:
-1. Insert test vessel schedule via API
-2. Trigger the check job manually
-3. Verify email was sent via Resend dashboard or API logs
-**Expected evidence**: Resend API shows delivered email with PDF attachment > 0 bytes
+/clarity https://github.com/someone/port-scheduler "add weather alerts before vessel arrival"
 ```
 
----
+### What INGEST produces (context.md summary)
 
-## Example 2: "Add dark mode to the dashboard"
+**Sources analyzed:**
+- GitHub repo `someone/port-scheduler`: Python 3.12, FastAPI, PostgreSQL. Manages vessel ETAs per port. Has `models/vessel.py`, `models/port.py`, `routes/schedule.py`. No weather integration. Tests cover CRUD for schedules.
+- Free text: user wants weather alerts before vessel arrival.
 
-### Before (what the user says)
-> "Can you add dark mode to our admin dashboard?"
+**Inferred intent:** Add a weather forecasting feature that sends email alerts to vessel operators 24-48h before their scheduled port arrival, leveraging the existing vessel schedule data.
 
-### After Phase 1 (extracted context — brownfield)
+**Assumptions:**
+- [ASSUMPTION] Weather data from Open-Meteo API (free, no key required)
+- [ASSUMPTION] Alerts via email (not SMS, not push)
+- [ASSUMPTION] 24h before ETA is the alert trigger window
+- [ASSUMPTION] Alert includes wind speed, wave height, visibility, precipitation
+- [ASSUMPTION] PDF attachment for the forecast summary
 
-**Codebase scan reveals**: React 18 + Tailwind CSS + shadcn/ui dashboard. Theme currently hardcoded to light. No CSS custom properties for colors. 47 components in `src/components/`.
+### What SPECIFY produces (spec.md excerpt)
 
-- **What changes**: All UI components support light/dark theme toggle
-- **What stays**: All existing functionality, layout, data display
-- **Blast radius**: Every component that uses hardcoded colors (32 of 47)
-- **Migration**: None (UI-only change)
-- **Done means**: User can toggle dark/light mode; preference persists across sessions
-
-### After Phase 2 (spec excerpt — brownfield delta)
-
-**Current State**: Colors hardcoded via Tailwind classes (`bg-white`, `text-gray-900`). No theme provider.
-
-**Delta**:
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-001 | Add theme toggle button in the top navigation bar | MUST |
-| FR-002 | Implement dark color palette using Tailwind's `dark:` variant | MUST |
-| FR-003 | Persist theme preference in localStorage | MUST |
-| FR-004 | Respect OS-level color scheme preference on first visit | SHOULD |
-| FR-005 | Theme transition uses 150ms fade (no flash of wrong theme) | SHOULD |
-
-**Must NOT change**: Component layout, data fetching logic, routing, API calls.
+| ID | Requirement | Priority | Source |
+|----|-------------|----------|--------|
+| FR-001 | Fetch 48h weather forecast for port coordinates from Open-Meteo API | MUST | Inferred from intent + existing port model has lat/lon |
+| FR-002 | Generate PDF summary with wind, waves, visibility, precipitation | MUST | [ASSUMPTION] |
+| FR-003 | Send email with PDF attachment 24h before vessel ETA | MUST | Inferred from intent |
+| FR-004 | Retry failed email delivery 3x with exponential backoff | SHOULD | [ASSUMPTION] |
+| FR-005 | Log all alert attempts with delivery status | SHOULD | Inferred from existing logging patterns in codebase |
 
 ---
 
-## Example 3: Quick Mode
+## Example 2: Two repos (reference implementation + target)
 
-### Before
-> "A CLI tool that converts CSV to JSON"
+### Input
+```
+/clarity https://github.com/someone/auth-service-v1 /path/to/our-api "rebuild auth like v1 but with JWT"
+```
 
-### After Quick Mode (2 questions only)
-**One-liner**: CLI tool that reads a CSV file and outputs JSON
-**Core workflow**: User runs `csv2json input.csv` → tool reads CSV → outputs JSON to stdout (or `-o file.json`)
+### What INGEST produces
 
-**Spec** (with explicit assumptions):
+**Sources analyzed:**
+- GitHub repo `someone/auth-service-v1`: Node.js, Express, session-based auth with Redis. Has login, logout, password reset, role-based access (admin/user/viewer). 23 endpoints.
+- Local codebase `/path/to/our-api`: Python, FastAPI, currently no auth. Has 12 endpoints, PostgreSQL, deployed on Render.
+- Free text: rebuild auth like v1 but with JWT instead of sessions.
 
-| ID | Requirement | Priority | Notes |
-|----|-------------|----------|-------|
-| FR-001 | Accept CSV file path as positional argument | MUST | |
-| FR-002 | Output JSON array of objects to stdout | MUST | |
-| FR-003 | Support `-o` flag for file output | MUST | [ASSUMPTION] |
-| FR-004 | Auto-detect CSV delimiter (comma, semicolon, tab) | SHOULD | [ASSUMPTION] |
-| FR-005 | Handle UTF-8 encoding | MUST | [ASSUMPTION] |
-| FR-006 | Exit with error code 1 and message on invalid CSV | MUST | [ASSUMPTION] |
+**Inferred intent:** Implement JWT-based authentication in the existing FastAPI app, replicating the feature set of the reference Node.js auth service (login, logout, password reset, RBAC) but using JWT tokens instead of server-side sessions.
 
-> 4 assumptions flagged — user can review and adjust before handoff.
+**Key delta from reference:**
+- Session + Redis → JWT + refresh tokens (no server-side state)
+- Express middleware → FastAPI dependencies
+- 3 roles preserved: admin, user, viewer
+
+---
+
+## Example 3: URL + codebase (API docs as reference)
+
+### Input
+```
+/clarity https://stripe.com/docs/api/charges /path/to/my-saas "integrate Stripe payments"
+```
+
+### What INGEST produces
+
+**Sources analyzed:**
+- Stripe API docs: Charges API — create, retrieve, list, update charges. Requires API key. Supports idempotency keys. Webhooks for async events (charge.succeeded, charge.failed).
+- Local codebase: Next.js SaaS app with user accounts, subscription tiers (free/pro/enterprise) defined in `config/plans.ts`, no payment integration yet.
+
+**Inferred intent:** Integrate Stripe Charges API to handle payments for the existing subscription tiers, including checkout flow, webhook handling for payment confirmation, and subscription status tracking.
+
+---
+
+## Example 4: Quick mode
+
+### Input
+```
+/clarity quick https://github.com/someone/csv-toolkit
+```
+
+### What happens
+- Reads only: README + `pyproject.toml` + `src/main.py`
+- Generates spec in ~2 minutes with 8+ `[ASSUMPTION]` tags
+- User reviews assumptions, confirms or corrects
+- Scenarios and handoff generated immediately after
+
+---
+
+## Example 5: Multiple URLs (research-driven spec)
+
+### Input
+```
+/clarity https://linear.app https://github.com/makeplane/plane https://docs.github.com/en/issues "build a simpler project tracker"
+```
+
+### What INGEST produces
+
+**Sources analyzed:**
+- linear.app product page: Features — issues, cycles, projects, roadmaps, views, Git integration. Fast keyboard-driven UI. Opinionated workflow.
+- Plane (open-source): Similar feature set, React + Django, modular architecture. Has cycles, modules, pages, analytics.
+- GitHub Issues docs: Simple issue tracking with labels, milestones, assignees, projects. Limited workflow automation.
+- Free text: "simpler" — user wants a subset, not a clone.
+
+**Inferred intent:** Build a lightweight project tracker inspired by Linear's UX philosophy but scoped down — issues, labels, and a kanban board. No cycles, roadmaps, or Git integration in v1.
+
+**Assumptions:**
+- [ASSUMPTION] Web app (not desktop, not CLI)
+- [ASSUMPTION] Single-team use (no multi-workspace)
+- [ASSUMPTION] Core entities: Issue, Label, Board, Column
+- [ASSUMPTION] "Simpler" means ~20% of Linear's feature set

@@ -1,8 +1,8 @@
 # /clarity
 
-A Claude Code skill that turns vague ideas into implementable specs through structured questioning. You answer questions, Claude writes the spec.
+A Claude Code skill that generates implementable specs from reference material — repos, URLs, codebases, docs. You point it at sources. It does the hard thinking.
 
-Based on the "Five Levels of Vibe Coding" insight: the bottleneck isn't implementation speed — it's spec quality.
+The bottleneck in AI-assisted development isn't implementation speed — it's spec quality. Most people can't write specs detailed enough for autonomous AI implementation. This skill removes that bottleneck: you provide references, Claude generates the spec.
 
 ## What it does
 
@@ -10,8 +10,8 @@ Based on the "Five Levels of Vibe Coding" insight: the bottleneck isn't implemen
 
 | Phase | What happens | Output |
 |-------|-------------|--------|
-| **1. EXTRACT** | Claude asks you progressive questions (max 2-3 at a time) | `.clarity/context.md` |
-| **2. SPECIFY** | Claude writes a structured spec, you review section by section | `.clarity/spec.md` |
+| **1. INGEST** | Claude reads all your references (repos, URLs, code, docs) and extracts everything | `.clarity/context.md` |
+| **2. SPECIFY** | Claude writes a structured spec from what it ingested | `.clarity/spec.md` |
 | **3. SCENARIO** | Claude generates Given/When/Then behavioral scenarios (holdout set) | `scenarios/SC-NNN-*.md` |
 | **4. HANDOFF** | Claude creates a self-contained prompt for any AI coding agent | `.clarity/handoff.md` |
 | **5. EVALUATE** | After implementation, Claude tests code against holdout scenarios | `.clarity/evaluations/eval-*.md` |
@@ -20,25 +20,26 @@ The key trick: scenarios are a **holdout set** — the implementing agent never 
 
 ## Install
 
-Copy the skill folder into your Claude Code skills directory:
-
 ```bash
 cp -r clarity/ ~/.claude/skills/clarity/
 ```
 
-That's it. No dependencies.
+No dependencies.
 
 ## Usage
 
-In any project, just type:
+Point it at anything — GitHub repos, local codebases, URLs, docs:
 
 ```
-/clarity                                  # start from scratch
-/clarity a weather alert system for ports # start with a one-liner
-/clarity quick a CSV to JSON tool         # fast mode (2 questions, liberal assumptions)
-/clarity resume                           # continue where you left off
-/clarity evaluate                         # run holdout scenarios after implementation
+/clarity https://github.com/someone/repo
+/clarity /path/to/codebase
+/clarity https://github.com/someone/repo https://docs.example.com/api "add payment processing"
+/clarity quick https://github.com/someone/repo
+/clarity resume
+/clarity evaluate
 ```
+
+You can mix and match references. Claude reads everything, synthesizes, and generates the spec. You just review.
 
 On first run, it creates two directories in your project:
 
@@ -54,22 +55,29 @@ You can also initialize these manually:
 uv run ~/.claude/skills/clarity/scripts/init_project.py
 ```
 
-## How it works for brownfield projects
+## How it handles different sources
 
-If you run `/clarity` in a project that already has code, it auto-scans the codebase first (README, config files, entry points), summarizes what it found, then asks targeted delta questions: what changes, what stays, blast radius.
+| Source type | What Claude extracts |
+|-------------|---------------------|
+| **GitHub repo** | Architecture, tech stack, data models, API surface, test expectations, gaps |
+| **Local codebase** | Same + git history, uncommitted work, env config |
+| **API docs URL** | Endpoints, schemas, auth, rate limits, error codes |
+| **Product page URL** | Features, target users, UX flows |
+| **Blog/tutorial URL** | Architecture decisions, patterns, trade-offs |
+| **Free text** | Intent, constraints, priorities, anti-goals |
 
 ## Files
 
 ```
 ~/.claude/skills/clarity/
-├── SKILL.md                    # Main skill prompt (the 5-phase workflow)
+├── SKILL.md                    # Main skill prompt (5-phase autonomous workflow)
 ├── references/
-│   ├── question-bank.md        # Questions + probes for vague answers
+│   ├── analysis-playbook.md    # How to extract info from each source type
 │   ├── spec-template.md        # Spec structure (numbered FRs/NFRs)
 │   ├── scenario-template.md    # Given/When/Then format
 │   ├── handoff-template.md     # Implementation prompt template
 │   ├── evaluation-template.md  # Pass/fail report template
-│   └── examples.md             # Before/after examples
+│   └── examples.md             # Reference in → spec out examples
 └── scripts/
     └── init_project.py         # Project initializer (stdlib only, idempotent)
 ```
