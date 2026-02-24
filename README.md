@@ -115,57 +115,65 @@ Agent mode lets Copilot use skills, run commands, and edit files autonomously.
 
 You'll know it's working when the Copilot Chat panel shows a mode dropdown at the top — switch it from **"Ask"** or **"Edit"** to **"Agent"**.
 
-### Step 2: Open a Terminal
+### Step 2: Install /clarity (once, works in every project)
 
-Windows gives you three places to run commands. **Use the VS Code built-in terminal** — it avoids most confusion:
+You only need to do this once. After setup, `/clarity` is available in any VS Code project.
 
-1. In VS Code, press `` Ctrl+` `` (backtick) to open the integrated terminal
-2. It defaults to PowerShell, which works fine for everything below
+**Option A — No terminal needed (recommended)**
 
-> **Which terminal am I using?**
-> - If the prompt says `PS C:\Users\...>` → **PowerShell** (default, works great)
-> - If the prompt says `C:\Users\...>` → **Command Prompt** (also works)
-> - If the prompt says `user@machine:` → **Git Bash / WSL** (also works)
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open the Command Palette
+2. Type **"Chat: New Prompt File"** and select it
+3. Choose **"User"** (not "Workspace") — this makes it global
+4. Name the file `clarity`
+5. VS Code opens the new file. Replace its contents with the prompt from:
+   `https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md`
+6. Save (`Ctrl+S`)
+
+Done. `/clarity` now works in every project you open.
+
+> The file is saved to your VS Code user data folder. You don't need to know where — VS Code manages it. If you use [Settings Sync](https://code.visualstudio.com/docs/editor/settings-sync), it syncs across your machines automatically.
+
+**Option B — Terminal install (full skill with all reference files)**
+
+This gives Copilot access to the complete skill including analysis playbooks, templates, and examples.
+
+First, open a terminal in VS Code (`` Ctrl+` ``).
+
+> **Windows terminal tip:** Your terminal prompt tells you which shell you're in:
+> - `PS C:\Users\...>` → **PowerShell** (default, works fine)
+> - `C:\Users\...>` → **Command Prompt** (also works)
+> - `user@machine:` → **Git Bash / WSL** (also works)
 >
-> All three work for `git clone`. The only difference is folder creation syntax — the commands below cover both.
+> All three work for the commands below. If `git` is not recognized, [download Git for Windows](https://git-scm.com/download/win) and restart VS Code.
 
-Make sure **Git is installed** before continuing. Type `git --version` in the terminal. If it says "not recognized", [download Git for Windows](https://git-scm.com/download/win) and restart VS Code.
-
-### Step 3: Install /clarity
-
-First, navigate to your project folder in the terminal:
-
-```
-cd C:\Users\YourName\projects\your-project
-```
-
-Then choose one option:
-
-**Option A — Skill folder (recommended)**
-
-```
-git clone https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
-```
-
-This works the same in PowerShell, Command Prompt, and Git Bash. Copilot automatically detects skills in `.github/skills/`.
-
-**Option B — Prompt file only**
-
-If you prefer a lighter setup:
-
-```powershell
-# PowerShell (default VS Code terminal)
-New-Item -ItemType Directory -Force -Path .github\prompts
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md" -OutFile ".github\prompts\clarity.prompt.md"
-```
+Clone to a permanent location on your machine:
 
 ```bash
-# Git Bash or WSL
-mkdir -p .github/prompts
-curl -o .github/prompts/clarity.prompt.md https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md
+# Windows (PowerShell or Command Prompt)
+git clone https://github.com/FrancyJGLisboa/clarity.git %USERPROFILE%\.clarity-skill
+
+# macOS / Linux
+git clone https://github.com/FrancyJGLisboa/clarity.git ~/.clarity-skill
 ```
 
-### Step 4: Use /clarity
+Then tell VS Code where to find the prompt files. Open your user settings JSON (`Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)") and add:
+
+```json
+{
+  "chat.promptFilesLocations": {
+    ".github/prompts": true,
+    "C:\\Users\\YourName\\.clarity-skill\\prompts": true
+  }
+}
+```
+
+Replace `YourName` with your actual Windows username. On macOS/Linux use `"/Users/you/.clarity-skill/prompts"` or `"/home/you/.clarity-skill/prompts"`.
+
+> **Why Option B?** The prompt file in Option A is lightweight — it tells Copilot the 5-phase workflow. Option B also gives Copilot the full reference files (analysis playbooks, spec templates, scenario templates, examples) which produce richer specs.
+
+### Step 3: Use /clarity
+
+Open any project in VS Code, then:
 
 1. Open the **Copilot Chat** panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
 2. Switch to **Agent** mode using the dropdown at the top of the chat panel
@@ -193,7 +201,7 @@ Analyzes a local project and generates a spec for a new feature. On macOS/Linux 
 ```
 Fast mode — less analysis depth, more assumptions, same output structure.
 
-### Step 5: Review the outputs
+### Step 4: Review the outputs
 
 After /clarity runs, you'll find these files in your project:
 
@@ -209,7 +217,7 @@ your-project/
 
 The skill pauses after each phase so you can review and give feedback before it continues.
 
-### Step 6: Hand off to implementation
+### Step 5: Hand off to implementation
 
 Copy the contents of `.clarity/handoff.md` and paste it into a new Copilot Agent chat (or any AI coding tool). The handoff is self-contained — it has everything the implementing agent needs.
 
