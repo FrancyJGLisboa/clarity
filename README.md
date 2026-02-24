@@ -119,6 +119,53 @@ This skill follows the [Agent Skills standard](https://agentskills.io) and works
 | Gemini CLI | `~/.agents/skills/clarity/` | `/clarity` |
 | Any agentskills.io tool | `.github/skills/clarity/` | Varies |
 
+## Troubleshooting
+
+### SSL certificate error when cloning
+
+If you get:
+```
+fatal: unable to access 'https://github.com/...': SSL certificate problem: unable to get local issuer certificate
+```
+
+**Update CA certificates (recommended fix):**
+
+```bash
+# macOS
+brew install ca-certificates
+
+# Ubuntu/Debian
+sudo apt-get update && sudo apt-get install ca-certificates
+
+# Windows
+git update-git-for-windows
+```
+
+**Point Git to the correct CA bundle:**
+
+```bash
+# macOS with Homebrew
+git config --global http.sslCAInfo /usr/local/etc/openssl/cert.pem
+
+# Linux
+git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
+```
+
+**Behind a corporate proxy/VPN:**
+
+Your proxy may intercept HTTPS with its own certificate. Add the corporate CA cert:
+```bash
+git config --global http.sslCAInfo /path/to/corporate-ca-bundle.crt
+```
+
+**Quick workaround (temporary only):**
+
+```bash
+git config --global http.sslVerify false
+```
+
+> ⚠️ This disables SSL verification entirely. Use only to unblock yourself, then fix the root cause above.
+
 ## Files
 
 ```
