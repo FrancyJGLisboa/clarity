@@ -115,30 +115,57 @@ Agent mode lets Copilot use skills, run commands, and edit files autonomously.
 
 You'll know it's working when the Copilot Chat panel shows a mode dropdown at the top — switch it from **"Ask"** or **"Edit"** to **"Agent"**.
 
-### Step 2: Install /clarity
+### Step 2: Open a Terminal
 
-You have two options. Choose one:
+Windows gives you three places to run commands. **Use the VS Code built-in terminal** — it avoids most confusion:
+
+1. In VS Code, press `` Ctrl+` `` (backtick) to open the integrated terminal
+2. It defaults to PowerShell, which works fine for everything below
+
+> **Which terminal am I using?**
+> - If the prompt says `PS C:\Users\...>` → **PowerShell** (default, works great)
+> - If the prompt says `C:\Users\...>` → **Command Prompt** (also works)
+> - If the prompt says `user@machine:` → **Git Bash / WSL** (also works)
+>
+> All three work for `git clone`. The only difference is folder creation syntax — the commands below cover both.
+
+Make sure **Git is installed** before continuing. Type `git --version` in the terminal. If it says "not recognized", [download Git for Windows](https://git-scm.com/download/win) and restart VS Code.
+
+### Step 3: Install /clarity
+
+First, navigate to your project folder in the terminal:
+
+```
+cd C:\Users\YourName\projects\your-project
+```
+
+Then choose one option:
 
 **Option A — Skill folder (recommended)**
 
-Clone directly into your project:
-
-```bash
+```
 git clone https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
 ```
 
-Copilot automatically detects skills in `.github/skills/`.
+This works the same in PowerShell, Command Prompt, and Git Bash. Copilot automatically detects skills in `.github/skills/`.
 
 **Option B — Prompt file only**
 
 If you prefer a lighter setup:
 
+```powershell
+# PowerShell (default VS Code terminal)
+New-Item -ItemType Directory -Force -Path .github\prompts
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md" -OutFile ".github\prompts\clarity.prompt.md"
+```
+
 ```bash
+# Git Bash or WSL
 mkdir -p .github/prompts
 curl -o .github/prompts/clarity.prompt.md https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md
 ```
 
-### Step 3: Use /clarity
+### Step 4: Use /clarity
 
 1. Open the **Copilot Chat** panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
 2. Switch to **Agent** mode using the dropdown at the top of the chat panel
@@ -157,16 +184,16 @@ Generates a full spec from a GitHub repository.
 Combines a repo and its API docs into one spec.
 
 ```
-/clarity /path/to/local/project "add user authentication with OAuth"
+/clarity C:\Users\YourName\projects\my-app "add user authentication with OAuth"
 ```
-Analyzes a local project and generates a spec for a new feature.
+Analyzes a local project and generates a spec for a new feature. On macOS/Linux use `/path/to/project` instead.
 
 ```
 /clarity quick https://github.com/someone/repo
 ```
 Fast mode — less analysis depth, more assumptions, same output structure.
 
-### Step 4: Review the outputs
+### Step 5: Review the outputs
 
 After /clarity runs, you'll find these files in your project:
 
@@ -182,7 +209,7 @@ your-project/
 
 The skill pauses after each phase so you can review and give feedback before it continues.
 
-### Step 5: Hand off to implementation
+### Step 6: Hand off to implementation
 
 Copy the contents of `.clarity/handoff.md` and paste it into a new Copilot Agent chat (or any AI coding tool). The handoff is self-contained — it has everything the implementing agent needs.
 
