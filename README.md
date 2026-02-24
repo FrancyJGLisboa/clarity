@@ -95,6 +95,112 @@ You can also initialize these manually:
 python scripts/init_project.py
 ```
 
+## Getting Started — VS Code + GitHub Copilot
+
+### Prerequisites
+
+1. **VS Code** — [Download](https://code.visualstudio.com/) if you don't have it
+2. **GitHub Copilot extension** — Install from the Extensions sidebar (`Ctrl+Shift+X` / `Cmd+Shift+X`), search "GitHub Copilot"
+3. **GitHub Copilot Chat** — Installed automatically with the Copilot extension
+4. **Active Copilot subscription** — Free, Pro, or Enterprise (agent mode requires Copilot Chat)
+
+### Step 1: Enable Agent Mode
+
+Agent mode lets Copilot use skills, run commands, and edit files autonomously.
+
+1. Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
+2. Search for `chat.agent.enabled`
+3. Check the box to enable it
+4. Restart VS Code
+
+You'll know it's working when the Copilot Chat panel shows a mode dropdown at the top — switch it from **"Ask"** or **"Edit"** to **"Agent"**.
+
+### Step 2: Install /clarity
+
+You have two options. Choose one:
+
+**Option A — Skill folder (recommended)**
+
+Clone directly into your project:
+
+```bash
+git clone https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
+```
+
+Copilot automatically detects skills in `.github/skills/`.
+
+**Option B — Prompt file only**
+
+If you prefer a lighter setup:
+
+```bash
+mkdir -p .github/prompts
+curl -o .github/prompts/clarity.prompt.md https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md
+```
+
+### Step 3: Use /clarity
+
+1. Open the **Copilot Chat** panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
+2. Switch to **Agent** mode using the dropdown at the top of the chat panel
+3. Type `/clarity` followed by your references
+
+**Example prompts:**
+
+```
+/clarity https://github.com/someone/repo
+```
+Generates a full spec from a GitHub repository.
+
+```
+/clarity https://github.com/someone/repo https://docs.example.com/api
+```
+Combines a repo and its API docs into one spec.
+
+```
+/clarity /path/to/local/project "add user authentication with OAuth"
+```
+Analyzes a local project and generates a spec for a new feature.
+
+```
+/clarity quick https://github.com/someone/repo
+```
+Fast mode — less analysis depth, more assumptions, same output structure.
+
+### Step 4: Review the outputs
+
+After /clarity runs, you'll find these files in your project:
+
+```
+your-project/
+├── .clarity/
+│   ├── context.md      ← What was extracted from your references
+│   ├── spec.md          ← The structured specification (FR-001, NFR-001, ...)
+│   └── handoff.md       ← Ready-to-use prompt for any AI coding agent
+└── scenarios/
+    └── SC-001-*.md      ← Holdout test scenarios (don't share with coding agents)
+```
+
+The skill pauses after each phase so you can review and give feedback before it continues.
+
+### Step 5: Hand off to implementation
+
+Copy the contents of `.clarity/handoff.md` and paste it into a new Copilot Agent chat (or any AI coding tool). The handoff is self-contained — it has everything the implementing agent needs.
+
+After implementation, come back and run:
+
+```
+/clarity evaluate
+```
+
+This tests the code against the holdout scenarios the implementing agent never saw.
+
+### Tips
+
+- **Resume interrupted sessions** — Type `/clarity resume` to pick up where you left off
+- **Add to .gitignore** — You may want to add `.clarity/` and `scenarios/` to `.gitignore` if you don't want specs in version control
+- **Share with your team** — If you used Option A (skill folder), commit `.github/skills/clarity/` so all contributors get `/clarity` automatically
+- **Keep scenarios secret** — The `scenarios/` folder is a holdout set. Never include it in implementation prompts — that's what makes evaluation meaningful
+
 ## How it handles different sources
 
 | Source type | What gets extracted |
