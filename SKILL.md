@@ -27,6 +27,7 @@ User invokes `/clarity` followed by one or more references:
 /clarity quick /path/to/codebase
 /clarity resume
 /clarity evaluate
+/clarity update
 ```
 
 References can be any mix of:
@@ -248,3 +249,27 @@ When invoked with `quick`:
 - If the user provides no references at all, ask what they want to build and what references they can point to
 - If the user wants to skip a phase, warn what they'll miss but allow it
 - If `init_project.py` fails, create directories manually and continue
+
+---
+
+## Update
+
+When invoked with `/clarity update`:
+
+1. Find the clarity skill directory. Check these paths in order:
+   - `~/.claude/skills/clarity/` (Claude Code)
+   - `~/.copilot/skills/clarity/` (Copilot CLI)
+   - `~/.agents/skills/clarity/` (Gemini CLI)
+   - If none found, ask the user where clarity is installed.
+
+2. Run the update script:
+   ```bash
+   python {clarity_dir}/scripts/update.py
+   ```
+
+3. Report the results to the user:
+   - How many new commits were pulled (or "already up to date")
+   - Any new companion skills that were linked
+   - Whether a restart is needed to pick up new skills
+
+This does NOT enter the 5-phase workflow — it's a maintenance command only.

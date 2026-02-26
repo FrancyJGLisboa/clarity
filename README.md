@@ -76,6 +76,7 @@ Point it at anything — GitHub repos, local codebases, URLs, docs:
 /clarity quick https://github.com/someone/repo
 /clarity resume
 /clarity evaluate
+/clarity update
 ```
 
 **VS Code Copilot (agent mode):**
@@ -93,6 +94,22 @@ You can also initialize these manually:
 
 ```bash
 python scripts/init_project.py
+```
+
+## Updating
+
+Already have clarity installed? Pull the latest version and pick up new companion skills:
+
+```
+/clarity update
+```
+
+This pulls the latest from GitHub, shows what changed, and automatically links any new companion skills (like `/linear-walkthrough`).
+
+You can also run it directly from the terminal:
+
+```bash
+python ~/.claude/skills/clarity/scripts/update.py
 ```
 
 ## Getting Started — VS Code + GitHub Copilot
