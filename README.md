@@ -260,6 +260,70 @@ This skill follows the [Agent Skills standard](https://agentskills.io) and works
 | Gemini CLI | `~/.agents/skills/clarity/` | `/clarity` |
 | Any agentskills.io tool | `.github/skills/clarity/` | Varies |
 
+## Companion Skills
+
+### /linear-walkthrough
+
+The opposite of `/clarity`: while clarity turns references into specs for *building*, linear-walkthrough reads existing code and produces a walkthrough for *understanding*.
+
+Based on Simon Willison's "Linear Walkthroughs" pattern — the key innovation is that **every code snippet is extracted via shell commands**, never manually typed, eliminating hallucination risk.
+
+**Install (one extra symlink):**
+
+```bash
+# If clarity is already installed at ~/.claude/skills/clarity:
+ln -s ~/.claude/skills/clarity/linear-walkthrough ~/.claude/skills/linear-walkthrough
+```
+
+Or install companions automatically:
+
+```bash
+uv run ~/.claude/skills/clarity/scripts/init_project.py --install-companions
+```
+
+**Usage:**
+
+```
+/linear-walkthrough /path/to/codebase
+/linear-walkthrough https://github.com/someone/repo
+/linear-walkthrough /path/to/codebase "focus on the auth system"
+/linear-walkthrough quick /path/to/codebase
+```
+
+**Examples:**
+
+Onboard yourself to an unfamiliar repo:
+```
+/linear-walkthrough ~/projects/billing-service
+```
+→ Produces `billing-service/walkthrough.md` — a file-by-file explanation starting from the entry point, through core domain logic, down to config and infrastructure.
+
+Understand just one subsystem:
+```
+/linear-walkthrough ~/projects/billing-service "focus on the webhook handlers"
+```
+→ Same format, but scoped to webhook-related files only.
+
+Quick orientation on a GitHub repo before contributing:
+```
+/linear-walkthrough quick https://github.com/psf/black
+```
+→ Clones to `/tmp`, produces a high-level overview (README summary, tech stack, entry point walkthrough) in your current directory, then cleans up.
+
+Every code block in the output includes a provenance comment showing the shell command that extracted it:
+```python
+# $ sed -n '42,58p' src/core/engine.py
+def process(self, event: Event) -> Result:
+    validated = self.validator.check(event)
+    ...
+```
+You can re-run any command to verify the snippet is real — zero hallucination risk.
+
+| Skill | Direction | Use when |
+|-------|-----------|----------|
+| `/clarity` | References → Spec | You want to build something new |
+| `/linear-walkthrough` | Code → Walkthrough | You want to understand existing code |
+
 ## Troubleshooting
 
 ### SSL certificate error when cloning
@@ -321,6 +385,10 @@ clarity/
 │   ├── handoff-template.md     # Implementation prompt template
 │   ├── evaluation-template.md  # Pass/fail report template
 │   └── examples.md             # Reference in → spec out examples
+├── linear-walkthrough/         # Companion skill: /linear-walkthrough
+│   ├── SKILL.md                # Skill prompt
+│   └── references/
+│       └── walkthrough-template.md
 └── scripts/
     └── init_project.py         # Project initializer (stdlib only, idempotent)
 ```

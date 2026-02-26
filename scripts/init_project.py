@@ -3,9 +3,13 @@
 
 Usage:
     uv run ~/.claude/skills/clarity/scripts/init_project.py [project_path]
+    uv run ~/.claude/skills/clarity/scripts/init_project.py --install-companions
 
 If project_path is omitted, uses the current working directory.
 Idempotent — safe to run multiple times.
+
+Flags:
+    --install-companions  Create symlinks for companion skills (e.g. /linear-walkthrough)
 """
 
 import sys
@@ -80,9 +84,51 @@ def init_project(project_path: Path) -> None:
     print("\nDone. Project initialized for /clarity.")
 
 
+COMPANION_SKILLS = {
+    "linear-walkthrough": "Generates zero-hallucination codebase walkthroughs",
+}
+
+
+def install_companions(clarity_dir: Path) -> None:
+    """Create symlinks for companion skills so they're discoverable."""
+    skills_dir = clarity_dir.parent  # e.g. ~/.claude/skills/
+
+    for name, desc in COMPANION_SKILLS.items():
+        source = clarity_dir / name
+        target = skills_dir / name
+
+        if not source.is_dir():
+            print(f"  skip: {name}/ (source not found in clarity)")
+            continue
+
+        if target.exists() or target.is_symlink():
+            if target.is_symlink() and target.resolve() == source.resolve():
+                print(f"  exists: {name} -> {source}")
+            else:
+                print(f"  skip: {target} already exists (not a clarity symlink)")
+            continue
+
+        target.symlink_to(source)
+        print(f"  linked: {name} -> {source}")
+        print(f"          {desc}")
+
+    print("\nCompanion skills installed. Restart Claude Code to pick them up.")
+
+
 def main() -> None:
-    if len(sys.argv) > 1:
-        project_path = Path(sys.argv[1]).resolve()
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    flags = {a for a in sys.argv[1:] if a.startswith("--")}
+
+    if "--install-companions" in flags:
+        # Find clarity's own directory (where this script lives)
+        clarity_dir = Path(__file__).resolve().parent.parent
+        print(f"Installing companion skills from: {clarity_dir}\n")
+        install_companions(clarity_dir)
+        if not args:
+            return
+
+    if args:
+        project_path = Path(args[0]).resolve()
     else:
         project_path = Path.cwd()
 
