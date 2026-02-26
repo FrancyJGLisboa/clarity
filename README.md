@@ -285,17 +285,26 @@ The opposite of `/clarity`: while clarity turns references into specs for *build
 
 Based on Simon Willison's "Linear Walkthroughs" pattern — the key innovation is that **every code snippet is extracted via shell commands**, never manually typed, eliminating hallucination risk.
 
-**Install (one extra symlink):**
+**Install:**
+
+If you already have clarity, the easiest way is:
+
+```
+/clarity update
+```
+
+This pulls the latest version and automatically links any new companion skills.
+
+Alternatively, create the symlink manually:
 
 ```bash
-# If clarity is already installed at ~/.claude/skills/clarity:
 ln -s ~/.claude/skills/clarity/linear-walkthrough ~/.claude/skills/linear-walkthrough
 ```
 
-Or install companions automatically:
+Or via the init script:
 
 ```bash
-uv run ~/.claude/skills/clarity/scripts/init_project.py --install-companions
+python ~/.claude/skills/clarity/scripts/init_project.py --install-companions
 ```
 
 **Usage:**
@@ -407,5 +416,6 @@ clarity/
 │   └── references/
 │       └── walkthrough-template.md
 └── scripts/
-    └── init_project.py         # Project initializer (stdlib only, idempotent)
+    ├── init_project.py         # Project initializer (stdlib only, idempotent)
+    └── update.py               # Self-updater (git pull + companion linking)
 ```
