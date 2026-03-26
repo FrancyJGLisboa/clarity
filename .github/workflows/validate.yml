@@ -1,0 +1,41 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate clarity SKILL.md
+        run: python3 agent-skill-creator/scripts/validate.py .
+
+      - name: Validate agent-skill-creator SKILL.md
+        run: python3 agent-skill-creator/scripts/validate.py agent-skill-creator/
+
+      - name: Validate linear-walkthrough SKILL.md
+        run: python3 agent-skill-creator/scripts/validate.py linear-walkthrough/
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Security scan clarity
+        run: python3 agent-skill-creator/scripts/security_scan.py .
+
+      - name: Security scan agent-skill-creator
+        run: python3 agent-skill-creator/scripts/security_scan.py agent-skill-creator/

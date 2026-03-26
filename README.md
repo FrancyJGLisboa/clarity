@@ -1,61 +1,108 @@
-# /clarity
+# clarity
 
-An agent skill that generates implementable specs from reference material — repos, URLs, codebases, docs. You point it at sources. It does the hard thinking.
+**From messy references to deployed agent skills — verified, not just plausible.**
 
-Works with **Claude Code**, **GitHub Copilot CLI**, **Copilot in VS Code**, and any tool that supports the [Agent Skills standard](https://agentskills.io).
+[![Agent Skills Open Standard](https://img.shields.io/badge/Agent%20Skills-Open%20Standard-blue)](https://github.com/anthropics/agent-skills-spec)
+[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-The bottleneck in AI-assisted development isn't implementation speed — it's spec quality. Most people can't write specs detailed enough for autonomous AI implementation. This skill removes that bottleneck: you provide references, the AI generates the spec.
+---
 
-## What it does
+## The problem
 
-5 phases, each producing a concrete artifact:
+The specification gap is why AI agent workflows fail. Not model capability. Not implementation speed. Specification.
+
+Humans cannot write specs detailed enough for agents to build from without ambiguity. The implementing agent fills in the gaps with plausible-sounding assumptions. The result looks right until it doesn't.
+
+## What this is
+
+Three companion skills that form a complete pipeline — from raw, messy references to a verified, production-ready agent skill deployed across 14 platforms.
+
+```
+Your messy inputs                                        Your deployed skill
+(repos, URLs, PDFs,   →   /clarity   →   /agent-skill-creator   →   on 14 platforms
+ docs, codebases,          Ingest          Build & distribute          instantly
+ vague intentions)         Specify
+                           Scenario (holdout)
+                           Handoff
+                           Evaluate
+```
+
+You provide sources and evaluate the outcome. The agents handle everything in between.
+
+---
+
+## The three skills
+
+### /clarity — References → Verified Spec
+
+Points at anything. Reads it. Thinks. Produces a structured spec and independently verifiable behavioral scenarios.
 
 | Phase | What happens | Output |
 |-------|-------------|--------|
-| **1. INGEST** | Reads all your references (repos, URLs, code, docs) and extracts everything | `.clarity/context.md` |
-| **2. SPECIFY** | Writes a structured spec from what it ingested | `.clarity/spec.md` |
-| **3. SCENARIO** | Generates Given/When/Then behavioral scenarios (holdout set) | `scenarios/SC-NNN-*.md` |
-| **4. HANDOFF** | Creates a self-contained prompt for any AI coding agent | `.clarity/handoff.md` |
-| **5. EVALUATE** | After implementation, tests code against holdout scenarios | `.clarity/evaluations/eval-*.md` |
+| **INGEST** | Reads all your references — repos, URLs, code, docs, PDFs | `.clarity/context.md` |
+| **SPECIFY** | Writes a structured spec with numbered requirements | `.clarity/spec.md` |
+| **SCENARIO** | Generates Given/When/Then behavioral scenarios (holdout set) | `scenarios/SC-NNN-*.md` |
+| **HANDOFF** | Creates implementation prompt + skill brief | `.clarity/handoff.md` `.clarity/skill-brief.md` |
+| **EVALUATE** | Tests code against holdout scenarios | `.clarity/evaluations/eval-*.md` |
 
-The key trick: scenarios are a **holdout set** — the implementing agent never sees them. This lets you independently verify whether the implementation matches the spec.
+The key mechanism: **holdout evaluation**. Scenarios are generated before implementation and kept secret from the implementing agent. After implementation, `/clarity evaluate` tests the code against those scenarios — the only way to distinguish "the agent did what I asked" from "the agent did what I meant."
+
+### /agent-skill-creator — Spec → Deployed Skill
+
+Takes a workflow description, a skill-brief from `/clarity`, or any input — and produces a complete, production-ready agent skill installed on your platform.
+
+```
+your-skill/
+├── SKILL.md          # Skill definition — activates with /your-skill
+├── scripts/          # Functional Python code (no placeholders)
+├── references/       # Detailed documentation, loaded on demand
+├── assets/           # Templates, configs, data files
+├── install.sh        # Cross-platform auto-detect installer
+└── README.md         # Install instructions for all 14 platforms
+```
+
+Every skill passes automated validation and security scanning before delivery.
+
+### /linear-walkthrough — Code → Walkthrough
+
+The inverse of `/clarity`. Reads existing code and produces a file-by-file walkthrough where every code snippet is extracted via shell commands — zero hallucination risk.
+
+---
 
 ## Install
 
-### Claude Code (personal skill)
+### One-liner (recommended — installs all three skills)
 
 ```bash
+# Claude Code + VS Code Copilot
 git clone https://github.com/FrancyJGLisboa/clarity.git ~/.claude/skills/clarity
+cd ~/.claude/skills/clarity && ./shared/install.sh
+
+# Universal path (Codex CLI, Gemini CLI, Kiro, Antigravity)
+git clone https://github.com/FrancyJGLisboa/clarity.git ~/.agents/skills/clarity
+cd ~/.agents/skills/clarity && ./shared/install.sh
 ```
 
-Then use `/clarity` in any project.
+The installer auto-detects your platforms and symlinks all three skills.
 
-### GitHub Copilot CLI (personal skill)
+### Manual (pick your tool)
 
 ```bash
+# Claude Code
+git clone https://github.com/FrancyJGLisboa/clarity.git ~/.claude/skills/clarity
+ln -s ~/.claude/skills/clarity/agent-skill-creator ~/.claude/skills/agent-skill-creator
+ln -s ~/.claude/skills/clarity/linear-walkthrough ~/.claude/skills/linear-walkthrough
+
+# Copilot CLI
 git clone https://github.com/FrancyJGLisboa/clarity.git ~/.copilot/skills/clarity
-```
+ln -s ~/.copilot/skills/clarity/agent-skill-creator ~/.copilot/skills/agent-skill-creator
 
-Then use `/clarity` in any project.
-
-### Per-project (any tool)
-
-Copy into your repo so all contributors get it:
-
-```bash
-# Works with Copilot, Claude Code, and other agentskills.io-compatible tools
+# Per-project (all contributors get it)
 git clone https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
 ```
 
-Or add as a submodule:
-
-```bash
-git submodule add https://github.com/FrancyJGLisboa/clarity.git .github/skills/clarity
-```
-
-### VS Code — Copilot prompt file
-
-For VS Code users who prefer prompt files, copy just the prompt:
+### VS Code Copilot (prompt file only)
 
 ```bash
 mkdir -p .github/prompts
@@ -64,358 +111,238 @@ cp .github/skills/clarity/prompts/clarity.prompt.md .github/prompts/
 
 Then type `/clarity` in Copilot Chat (agent mode).
 
-## Usage
-
-Point it at anything — GitHub repos, local codebases, URLs, docs:
-
-**Claude Code / Copilot CLI:**
-```
-/clarity https://github.com/someone/repo
-/clarity /path/to/codebase
-/clarity https://github.com/someone/repo https://docs.example.com/api "add payment processing"
-/clarity quick https://github.com/someone/repo
-/clarity resume
-/clarity evaluate
-/clarity update
-```
-
-**VS Code Copilot (agent mode):**
-Type `/clarity` in chat, then describe your references in the input prompt.
-
-On first run, it creates two directories in your project:
-
-```
-your-project/
-├── .clarity/        # specs, context, handoff, evaluations
-└── scenarios/       # holdout test scenarios (agents must not read these)
-```
-
-You can also initialize these manually:
-
-```bash
-python scripts/init_project.py
-```
-
-## Updating
-
-Already have clarity installed? Pull the latest version and pick up new companion skills:
-
-```
-/clarity update
-```
-
-This pulls the latest from GitHub, shows what changed, and automatically links any new companion skills (like `/linear-walkthrough`).
-
-You can also run it directly from the terminal:
-
-```bash
-python ~/.claude/skills/clarity/scripts/update.py
-```
-
-## Getting Started — VS Code + GitHub Copilot
-
-### Prerequisites
-
-1. **VS Code** — [Download](https://code.visualstudio.com/) if you don't have it
-2. **GitHub Copilot extension** — Install from the Extensions sidebar (`Ctrl+Shift+X` / `Cmd+Shift+X`), search "GitHub Copilot"
-3. **GitHub Copilot Chat** — Installed automatically with the Copilot extension
-4. **Active Copilot subscription** — Free, Pro, or Enterprise (agent mode requires Copilot Chat)
-
-### Step 1: Enable Agent Mode
-
-Agent mode lets Copilot use skills, run commands, and edit files autonomously.
-
-1. Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
-2. Search for `chat.agent.enabled`
-3. Check the box to enable it
-4. Restart VS Code
-
-You'll know it's working when the Copilot Chat panel shows a mode dropdown at the top — switch it from **"Ask"** or **"Edit"** to **"Agent"**.
-
-### Step 2: Install /clarity (once, works in every project)
-
-You only need to do this once. After setup, `/clarity` is available in any VS Code project.
-
-**Option A — No terminal needed (recommended)**
-
-1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open the Command Palette
-2. Type **"Chat: New Prompt File"** and select it
-3. Choose **"User"** (not "Workspace") — this makes it global
-4. Name the file `clarity`
-5. VS Code opens the new file. Replace its contents with the prompt from:
-   `https://raw.githubusercontent.com/FrancyJGLisboa/clarity/main/prompts/clarity.prompt.md`
-6. Save (`Ctrl+S`)
-
-Done. `/clarity` now works in every project you open.
-
-> The file is saved to your VS Code user data folder. You don't need to know where — VS Code manages it. If you use [Settings Sync](https://code.visualstudio.com/docs/editor/settings-sync), it syncs across your machines automatically.
-
-**Option B — Terminal install (full skill with all reference files)**
-
-This gives Copilot access to the complete skill including analysis playbooks, templates, and examples.
-
-First, open a terminal in VS Code (`` Ctrl+` ``).
-
-> **Windows terminal tip:** Your terminal prompt tells you which shell you're in:
-> - `PS C:\Users\...>` → **PowerShell** (default, works fine)
-> - `C:\Users\...>` → **Command Prompt** (also works)
-> - `user@machine:` → **Git Bash / WSL** (also works)
->
-> All three work for the commands below. If `git` is not recognized, [download Git for Windows](https://git-scm.com/download/win) and restart VS Code.
-
-Clone to a permanent location on your machine:
-
-```bash
-# Windows (PowerShell or Command Prompt)
-git clone https://github.com/FrancyJGLisboa/clarity.git %USERPROFILE%\.clarity-skill
-
-# macOS / Linux
-git clone https://github.com/FrancyJGLisboa/clarity.git ~/.clarity-skill
-```
-
-Then tell VS Code where to find the prompt files. Open your user settings JSON (`Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)") and add:
-
-```json
-{
-  "chat.promptFilesLocations": {
-    ".github/prompts": true,
-    "C:\\Users\\YourName\\.clarity-skill\\prompts": true
-  }
-}
-```
-
-Replace `YourName` with your actual Windows username. On macOS/Linux use `"/Users/you/.clarity-skill/prompts"` or `"/home/you/.clarity-skill/prompts"`.
-
-> **Why Option B?** The prompt file in Option A is lightweight — it tells Copilot the 5-phase workflow. Option B also gives Copilot the full reference files (analysis playbooks, spec templates, scenario templates, examples) which produce richer specs.
-
-### Step 3: Use /clarity
-
-Open any project in VS Code, then:
-
-1. Open the **Copilot Chat** panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
-2. Switch to **Agent** mode using the dropdown at the top of the chat panel
-3. Type `/clarity` followed by your references
-
-**Example prompts:**
-
-```
-/clarity https://github.com/someone/repo
-```
-Generates a full spec from a GitHub repository.
-
-```
-/clarity https://github.com/someone/repo https://docs.example.com/api
-```
-Combines a repo and its API docs into one spec.
-
-```
-/clarity C:\Users\YourName\projects\my-app "add user authentication with OAuth"
-```
-Analyzes a local project and generates a spec for a new feature. On macOS/Linux use `/path/to/project` instead.
-
-```
-/clarity quick https://github.com/someone/repo
-```
-Fast mode — less analysis depth, more assumptions, same output structure.
-
-### Step 4: Review the outputs
-
-After /clarity runs, you'll find these files in your project:
-
-```
-your-project/
-├── .clarity/
-│   ├── context.md      ← What was extracted from your references
-│   ├── spec.md          ← The structured specification (FR-001, NFR-001, ...)
-│   └── handoff.md       ← Ready-to-use prompt for any AI coding agent
-└── scenarios/
-    └── SC-001-*.md      ← Holdout test scenarios (don't share with coding agents)
-```
-
-The skill pauses after each phase so you can review and give feedback before it continues.
-
-### Step 5: Hand off to implementation
-
-Copy the contents of `.clarity/handoff.md` and paste it into a new Copilot Agent chat (or any AI coding tool). The handoff is self-contained — it has everything the implementing agent needs.
-
-After implementation, come back and run:
-
-```
-/clarity evaluate
-```
-
-This tests the code against the holdout scenarios the implementing agent never saw.
-
-### Tips
-
-- **Resume interrupted sessions** — Type `/clarity resume` to pick up where you left off
-- **Add to .gitignore** — You may want to add `.clarity/` and `scenarios/` to `.gitignore` if you don't want specs in version control
-- **Share with your team** — If you used Option A (skill folder), commit `.github/skills/clarity/` so all contributors get `/clarity` automatically
-- **Keep scenarios secret** — The `scenarios/` folder is a holdout set. Never include it in implementation prompts — that's what makes evaluation meaningful
-
-## How it handles different sources
-
-| Source type | What gets extracted |
-|-------------|---------------------|
-| **GitHub repo** | Architecture, tech stack, data models, API surface, test expectations, gaps |
-| **Local codebase** | Same + git history, uncommitted work, env config |
-| **API docs URL** | Endpoints, schemas, auth, rate limits, error codes |
-| **Product page URL** | Features, target users, UX flows |
-| **Blog/tutorial URL** | Architecture decisions, patterns, trade-offs |
-| **Free text** | Intent, constraints, priorities, anti-goals |
-
-## Compatibility
-
-This skill follows the [Agent Skills standard](https://agentskills.io) and works with:
+### Platform support
 
 | Tool | Install path | Invocation |
 |------|-------------|------------|
 | Claude Code | `~/.claude/skills/clarity/` | `/clarity` |
 | Copilot CLI | `~/.copilot/skills/clarity/` | `/clarity` |
-| Copilot VS Code | `.github/skills/clarity/` or `.github/prompts/` | `/clarity` in chat |
-| Cursor | `.github/skills/clarity/` | `/clarity` |
-| Gemini CLI | `~/.agents/skills/clarity/` | `/clarity` |
-| Any agentskills.io tool | `.github/skills/clarity/` | Varies |
+| Copilot VS Code | `.github/skills/clarity/` | `/clarity` in agent mode |
+| Cursor | `.cursor/rules/clarity/` | `/clarity` |
+| Windsurf | `.windsurf/rules/clarity/` | `/clarity` |
+| Codex CLI | `~/.agents/skills/clarity/` | `/clarity` |
+| Gemini CLI | `~/.gemini/skills/clarity/` | `/clarity` |
+| Kiro | `.kiro/skills/clarity/` | `/clarity` |
+| Cline / Roo Code / Trae | `.clinerules/clarity/` | `/clarity` |
+| Goose | `~/.config/goose/skills/clarity/` | `/clarity` |
+| OpenCode | `~/.config/opencode/skills/clarity/` | `/clarity` |
 
-## Companion Skills
+---
 
-### /linear-walkthrough
+## Usage
 
-The opposite of `/clarity`: while clarity turns references into specs for *building*, linear-walkthrough reads existing code and produces a walkthrough for *understanding*.
+### The full pipeline
 
-Based on Simon Willison's "Linear Walkthroughs" pattern — the key innovation is that **every code snippet is extracted via shell commands**, never manually typed, eliminating hallucination risk.
+```bash
+# Step 1: Point clarity at your reference material
+/clarity https://github.com/your-org/internal-api-docs
 
-**Install:**
+# Step 2: Review the spec at .clarity/spec.md
+# Redirect, approve, or adjust before continuing
 
-If you already have clarity, the easiest way is:
+# Step 3: Hand off to agent-skill-creator
+/agent-skill-creator .clarity/skill-brief.md
+
+# Step 4: Your skill is installed and ready
+# /your-skill is now available
+
+# Step 5: Evaluate the implementation
+/clarity evaluate
+```
+
+### Fast path — you already know what you want
+
+```bash
+# Skip clarity if you have a clear spec or workflow
+/agent-skill-creator "weekly positions report for the latam grains desk"
+
+# Or point it at existing code
+/agent-skill-creator scripts/my_existing_pipeline.py
+```
+
+### Understand before building
+
+```bash
+# Use linear-walkthrough when the codebase is unfamiliar
+/linear-walkthrough https://github.com/someone/complex-repo
+
+# Then use clarity to build on top of it
+/clarity https://github.com/someone/complex-repo "add webhook support"
+```
+
+### /clarity commands
+
+```
+/clarity https://github.com/someone/repo                   # Single repo
+/clarity https://github.com/repo https://docs.example.com   # Repo + API docs
+/clarity /path/to/codebase "add OAuth authentication"        # Local + goal
+/clarity quick https://github.com/someone/repo               # Fast mode
+/clarity resume                                              # Resume interrupted session
+/clarity evaluate                                            # Test against holdout scenarios
+/clarity update                                              # Pull latest version
+```
+
+### /agent-skill-creator commands
+
+```
+/agent-skill-creator .clarity/skill-brief.md                # From a clarity handoff
+/agent-skill-creator "daily risk report for corn and soybeans" # From a description
+/agent-skill-creator scripts/existing_pipeline.py            # From existing code
+/agent-skill-creator meeting-transcript.md                   # From a transcript
+```
+
+### /linear-walkthrough commands
+
+```
+/linear-walkthrough ~/projects/billing-service               # Full codebase
+/linear-walkthrough ~/projects/app "focus on auth"           # Focus on subsystem
+/linear-walkthrough quick https://github.com/psf/black       # Quick orientation
+```
+
+---
+
+## How it handles different sources
+
+| Source type | What gets extracted |
+|-------------|---------------------|
+| GitHub repo | Architecture, tech stack, data models, API surface, test expectations, gaps |
+| Local codebase | Same + git history, uncommitted work, env config |
+| API docs URL | Endpoints, schemas, auth, rate limits, error codes |
+| Product page | Features, target users, UX flows |
+| Blog/tutorial | Architecture decisions, patterns, trade-offs |
+| Free text | Intent, constraints, priorities, anti-goals |
+
+---
+
+## Quality gates
+
+Every skill generated by `/agent-skill-creator` passes automated checks before delivery:
+
+| Gate | What it checks |
+|------|---------------|
+| **Spec validation** | SKILL.md structure, frontmatter, naming rules, file references |
+| **Security scan** | No hardcoded API keys, no credentials, no injection patterns |
+| **Staleness check** | Review dates, dependency health, API schema drift |
+
+Run them independently:
+
+```bash
+python3 agent-skill-creator/scripts/validate.py ./my-skill/
+python3 agent-skill-creator/scripts/security_scan.py ./my-skill/
+python3 agent-skill-creator/scripts/staleness_check.py ./my-skill/ --check-deps --check-drift
+```
+
+---
+
+## Share skills across your team
+
+After building a skill, share it with one `git clone`:
+
+```bash
+# Your colleague installs it
+git clone https://github.com/your-org/sales-report-skill.git ~/.agents/skills/sales-report-skill
+```
+
+For larger teams, use the git-based skill registry:
+
+```bash
+python3 agent-skill-creator/scripts/skill_registry.py init --name "Acme Corp Skills"
+python3 agent-skill-creator/scripts/skill_registry.py publish ./skill/ --tags sales,reports
+python3 agent-skill-creator/scripts/skill_registry.py list
+python3 agent-skill-creator/scripts/skill_registry.py search "sales"
+python3 agent-skill-creator/scripts/skill_registry.py install sales-report-skill
+```
+
+No servers, no databases — just git.
+
+---
+
+## The skill-brief format
+
+The **skill brief** is the interchange format between `/clarity` and `/agent-skill-creator`. It encodes everything the builder needs without re-reading original sources.
+
+Any tool can produce or consume this format. See:
+- Template: [`clarity/references/skill-brief-template.md`](clarity/references/skill-brief-template.md)
+- JSON Schema: [`shared/skill-brief-schema.json`](shared/skill-brief-schema.json)
+- Specification: [`docs/skill-brief-spec.md`](docs/skill-brief-spec.md)
+
+---
+
+## Updating
 
 ```
 /clarity update
 ```
 
-This pulls the latest version and automatically links any new companion skills.
-
-Alternatively, create the symlink manually:
+Or from the terminal:
 
 ```bash
-ln -s ~/.claude/skills/clarity/linear-walkthrough ~/.claude/skills/linear-walkthrough
+cd ~/.claude/skills/clarity && git pull
+./shared/install.sh
 ```
 
-Or via the init script:
+---
 
-```bash
-python ~/.claude/skills/clarity/scripts/init_project.py --install-companions
-```
-
-**Usage:**
+## Repository structure
 
 ```
-/linear-walkthrough /path/to/codebase
-/linear-walkthrough https://github.com/someone/repo
-/linear-walkthrough /path/to/codebase "focus on the auth system"
-/linear-walkthrough quick /path/to/codebase
-```
-
-**Examples:**
-
-Onboard yourself to an unfamiliar repo:
-```
-/linear-walkthrough ~/projects/billing-service
-```
-→ Produces `billing-service/walkthrough.md` — a file-by-file explanation starting from the entry point, through core domain logic, down to config and infrastructure.
-
-Understand just one subsystem:
-```
-/linear-walkthrough ~/projects/billing-service "focus on the webhook handlers"
-```
-→ Same format, but scoped to webhook-related files only.
-
-Quick orientation on a GitHub repo before contributing:
-```
-/linear-walkthrough quick https://github.com/psf/black
-```
-→ Clones to `/tmp`, produces a high-level overview (README summary, tech stack, entry point walkthrough) in your current directory, then cleans up.
-
-Every code block in the output includes a provenance comment showing the shell command that extracted it:
-```python
-# $ sed -n '42,58p' src/core/engine.py
-def process(self, event: Event) -> Result:
-    validated = self.validator.check(event)
-    ...
-```
-You can re-run any command to verify the snippet is real — zero hallucination risk.
-
-| Skill | Direction | Use when |
-|-------|-----------|----------|
-| `/clarity` | References → Spec | You want to build something new |
-| `/linear-walkthrough` | Code → Walkthrough | You want to understand existing code |
-
-## Troubleshooting
-
-### SSL certificate error when cloning
-
-If you get:
-```
-fatal: unable to access 'https://github.com/...': SSL certificate problem: unable to get local issuer certificate
-```
-
-**Update CA certificates (recommended fix):**
-
-```bash
-# macOS
-brew install ca-certificates
-
-# Ubuntu/Debian
-sudo apt-get update && sudo apt-get install ca-certificates
-
-# Windows
-git update-git-for-windows
-```
-
-**Point Git to the correct CA bundle:**
-
-```bash
-# macOS with Homebrew
-git config --global http.sslCAInfo /usr/local/etc/openssl/cert.pem
-
-# Linux
-git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
-```
-
-**Behind a corporate proxy/VPN:**
-
-Your proxy may intercept HTTPS with its own certificate. Add the corporate CA cert:
-```bash
-git config --global http.sslCAInfo /path/to/corporate-ca-bundle.crt
-```
-
-**Quick workaround (temporary only):**
-
-```bash
-git config --global http.sslVerify false
-```
-
-> ⚠️ This disables SSL verification entirely. Use only to unblock yourself, then fix the root cause above.
-
-## Files
-
-```
-clarity/
-├── SKILL.md                    # Main skill prompt (agentskills.io format)
-├── prompts/
-│   └── clarity.prompt.md       # VS Code Copilot prompt file
-├── references/
-│   ├── analysis-playbook.md    # How to extract info from each source type
-│   ├── spec-template.md        # Spec structure (numbered FRs/NFRs)
-│   ├── scenario-template.md    # Given/When/Then format
-│   ├── handoff-template.md     # Implementation prompt template
-│   ├── evaluation-template.md  # Pass/fail report template
-│   └── examples.md             # Reference in → spec out examples
-├── linear-walkthrough/         # Companion skill: /linear-walkthrough
-│   ├── SKILL.md                # Skill prompt
+clarity/                            # Repo root — IS the /clarity skill
+├── SKILL.md                        # /clarity activation
+├── prompts/                        # VS Code Copilot prompt file
+├── references/                     # Templates and playbooks
+├── scripts/                        # init_project.py, update.py
+│
+├── linear-walkthrough/             # /linear-walkthrough companion skill
+│   ├── SKILL.md
 │   └── references/
-│       └── walkthrough-template.md
-└── scripts/
-    ├── init_project.py         # Project initializer (stdlib only, idempotent)
-    └── update.py               # Self-updater (git pull + companion linking)
+│
+├── agent-skill-creator/            # /agent-skill-creator skill
+│   ├── SKILL.md
+│   ├── references/
+│   ├── scripts/
+│   └── registry/
+│
+├── shared/                         # Shared infrastructure
+│   ├── install.sh                  # Unified pipeline installer
+│   └── skill-brief-schema.json     # Skill brief format schema
+│
+├── docs/                           # Project documentation
+│   ├── architecture.md             # End-to-end pipeline docs
+│   └── skill-brief-spec.md         # Skill brief format v1.0
+│
+├── LICENSE                         # MIT
+├── CONTRIBUTING.md                 # How to contribute
+├── CHANGELOG.md                    # Version history
+├── ROADMAP.md                      # Public development roadmap
+└── README.md                       # This file
 ```
+
+---
+
+## Why this exists
+
+Every agent workflow has the same failure mode. The spec is vague. The implementing agent fills gaps with plausible-sounding assumptions. The result looks right until it doesn't.
+
+The root cause isn't the model. It's that humans are structurally bad at writing specifications — not because they lack intelligence, but because externalizing implicit knowledge into explicit, unambiguous instructions is genuinely cognitively demanding work.
+
+This pipeline inverts that. The agent does the hard specification work. The human reviews artifacts at each phase. The holdout evaluation provides an independent measure of whether the implementation matches the intent.
+
+The result: agent workflows that are **verifiable**, not just plausible.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+## Links
+
+- [Agent Skills Open Standard](https://github.com/anthropics/agent-skills-spec)
+- [Architecture docs](docs/architecture.md)
+- [Skill brief specification](docs/skill-brief-spec.md)
+- [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)

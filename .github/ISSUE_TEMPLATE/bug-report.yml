@@ -1,0 +1,63 @@
+name: Bug Report
+description: Report something that isn't working correctly
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill?
+      options:
+        - /clarity
+        - /agent-skill-creator
+        - /linear-walkthrough
+        - Installer / setup
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Which platform?
+      options:
+        - Claude Code
+        - GitHub Copilot CLI
+        - VS Code Copilot
+        - Cursor
+        - Windsurf
+        - Codex CLI
+        - Gemini CLI
+        - Kiro
+        - Cline
+        - Roo Code
+        - Trae
+        - Goose
+        - OpenCode
+        - Antigravity
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug. Include the input you gave and the output you got.
+      placeholder: |
+        I ran `/clarity https://github.com/example/repo` and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Error messages, screenshots, OS, anything else relevant.

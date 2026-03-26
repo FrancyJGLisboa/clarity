@@ -1,0 +1,56 @@
+name: Skill Showcase
+description: Share a skill you built with this pipeline
+labels: ["showcase"]
+body:
+  - type: input
+    id: skill-name
+    attributes:
+      label: Skill name
+      placeholder: sales-report-skill
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What does it do?
+      description: One paragraph describing the skill and who it's for.
+    validations:
+      required: true
+
+  - type: input
+    id: repo-url
+    attributes:
+      label: Repository URL
+      placeholder: https://github.com/your-org/your-skill
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pipeline
+    attributes:
+      label: How was it built?
+      options:
+        - label: Used `/clarity` to generate the spec
+        - label: Used `/agent-skill-creator` to build the skill
+        - label: Used `/linear-walkthrough` to understand existing code first
+        - label: Used `/clarity evaluate` to verify the implementation
+
+  - type: checkboxes
+    id: platforms-tested
+    attributes:
+      label: Platforms tested
+      options:
+        - label: Claude Code
+        - label: GitHub Copilot
+        - label: Cursor
+        - label: Windsurf
+        - label: Codex CLI
+        - label: Gemini CLI
+        - label: Other (specify in notes)
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything else — lessons learned, tips, what worked well.

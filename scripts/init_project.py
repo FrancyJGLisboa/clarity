@@ -84,22 +84,23 @@ def init_project(project_path: Path) -> None:
     print("\nDone. Project initialized for /clarity.")
 
 
-COMPANION_SKILLS = {
-    "linear-walkthrough": "Generates zero-hallucination codebase walkthroughs",
-}
-
-
 def install_companions(clarity_dir: Path) -> None:
-    """Create symlinks for companion skills so they're discoverable."""
+    """Create symlinks for all pipeline skills so they're discoverable.
+
+    The repo root IS the clarity skill. Subdirectories with SKILL.md
+    (agent-skill-creator, linear-walkthrough) need symlinks in the
+    parent skills directory.
+    """
     skills_dir = clarity_dir.parent  # e.g. ~/.claude/skills/
 
-    for name, desc in COMPANION_SKILLS.items():
-        source = clarity_dir / name
-        target = skills_dir / name
+    # Collect all subdirectories with SKILL.md
+    skills_to_link: dict[str, tuple[Path, str]] = {}
+    for child in clarity_dir.iterdir():
+        if child.is_dir() and (child / "SKILL.md").exists() and child.name != ".git":
+            skills_to_link[child.name] = (child, f"/{child.name} skill")
 
-        if not source.is_dir():
-            print(f"  skip: {name}/ (source not found in clarity)")
-            continue
+    for name, (source, desc) in skills_to_link.items():
+        target = skills_dir / name
 
         if target.exists() or target.is_symlink():
             if target.is_symlink() and target.resolve() == source.resolve():
@@ -112,7 +113,7 @@ def install_companions(clarity_dir: Path) -> None:
         print(f"  linked: {name} -> {source}")
         print(f"          {desc}")
 
-    print("\nCompanion skills installed. Restart Claude Code to pick them up.")
+    print("\nPipeline skills installed. Restart your agent tool to pick them up.")
 
 
 def main() -> None:

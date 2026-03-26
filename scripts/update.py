@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update clarity to the latest version from GitHub.
+"""Update clarity pipeline to the latest version from GitHub.
 
 Usage:
     python ~/.claude/skills/clarity/scripts/update.py
@@ -8,9 +8,9 @@ Or via the skill trigger:
     /clarity update
 
 What it does:
-    1. Detects where clarity is installed
+    1. Detects where the clarity repo is installed
     2. Pulls the latest from origin/main
-    3. Installs/updates companion skill symlinks
+    3. Installs/updates companion skill symlinks (agent-skill-creator, linear-walkthrough)
     4. Reports what changed
 """
 
@@ -18,12 +18,22 @@ import subprocess
 import sys
 from pathlib import Path
 
-# The repo root is one level up from scripts/
-CLARITY_DIR = Path(__file__).resolve().parent.parent
+# scripts/ is at the repo root, so repo root is one level up from scripts/
+# The repo root IS the clarity skill (SKILL.md at root)
+REPO_DIR = Path(__file__).resolve().parent.parent
+
+# Fallback: walk up until we find .git (handles different install structures)
+if not (REPO_DIR / ".git").exists():
+    candidate = REPO_DIR
+    while candidate != candidate.parent:
+        if (candidate / ".git").exists():
+            REPO_DIR = candidate
+            break
+        candidate = candidate.parent
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, capture_output=True, text=True, cwd=CLARITY_DIR, **kwargs)
+    return subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_DIR, **kwargs)
 
 
 def current_head() -> str:
@@ -32,7 +42,7 @@ def current_head() -> str:
 
 
 def is_git_repo() -> bool:
-    return (CLARITY_DIR / ".git").exists()
+    return (REPO_DIR / ".git").exists()
 
 
 def has_local_changes() -> bool:
@@ -42,43 +52,52 @@ def has_local_changes() -> bool:
 
 def detect_install_type() -> str:
     """Detect how clarity was installed based on its path."""
-    path = str(CLARITY_DIR)
+    path = str(REPO_DIR)
     if "/.claude/skills/" in path:
         return "Claude Code"
     if "/.copilot/skills/" in path:
         return "Copilot CLI"
     if "/.agents/skills/" in path:
-        return "Gemini CLI"
+        return "Universal (Codex/Gemini/Kiro)"
     if "/.github/skills/" in path or "/.github\\skills\\" in path:
         return "per-project"
     return "custom"
 
 
-def find_companion_skills() -> dict[str, Path]:
-    """Find companion skill directories (contain SKILL.md)."""
-    companions = {}
-    for child in CLARITY_DIR.iterdir():
+def find_skills_to_link() -> dict[str, Path]:
+    """Find all skills in the monorepo that should be symlinked.
+
+    The repo root IS the /clarity skill (SKILL.md at root).
+    Subdirectories with SKILL.md are companion skills that need symlinks:
+    - agent-skill-creator/ → /agent-skill-creator
+    - linear-walkthrough/ → /linear-walkthrough
+    """
+    skills = {}
+
+    for child in REPO_DIR.iterdir():
         if child.is_dir() and (child / "SKILL.md").exists() and child.name != ".git":
-            companions[child.name] = child
-    return companions
+            skills[child.name] = child
+
+    return skills
 
 
-def install_companions(companions: dict[str, Path]) -> list[str]:
-    """Create symlinks for companion skills. Returns list of newly linked names."""
-    skills_dir = CLARITY_DIR.parent
+def install_skill_links(skills: dict[str, Path]) -> list[str]:
+    """Create symlinks for skills in the parent skills directory.
+    Returns list of newly linked names."""
+    skills_dir = REPO_DIR.parent
     linked = []
 
-    for name, source in companions.items():
+    for name, source in skills.items():
         target = skills_dir / name
 
         if target.is_symlink() and target.resolve() == source.resolve():
             continue  # already correct
-        if target.exists():
-            print(f"  skip: {target} already exists (not a clarity symlink)")
+        if target.exists() and not target.is_symlink():
+            print(f"  skip: {target} already exists (not a symlink)")
             continue
 
         if target.is_symlink():
-            # broken symlink — remove and re-create
+            # broken or outdated symlink — remove and re-create
             target.unlink()
 
         target.symlink_to(source)
@@ -88,7 +107,7 @@ def install_companions(companions: dict[str, Path]) -> list[str]:
 
 
 def update() -> None:
-    print(f"Clarity installed at: {CLARITY_DIR}")
+    print(f"Clarity pipeline at: {REPO_DIR}")
     print(f"Install type: {detect_install_type()}\n")
 
     if not is_git_repo():
@@ -123,17 +142,17 @@ def update() -> None:
             print(f"  {line}")
         print()
 
-    # Install companion skills
-    companions = find_companion_skills()
-    if companions:
-        linked = install_companions(companions)
+    # Install/update skill symlinks
+    skills = find_skills_to_link()
+    if skills:
+        linked = install_skill_links(skills)
         if linked:
-            print(f"New companion skills linked: {', '.join(linked)}")
-            print("Restart Claude Code to pick them up.\n")
+            print(f"New skills linked: {', '.join(linked)}")
+            print("Restart your agent tool to pick them up.\n")
         else:
-            print(f"Companion skills up to date: {', '.join(companions.keys())}")
+            print(f"Skills up to date: {', '.join(skills.keys())}")
     else:
-        print("No companion skills found.")
+        print("No skills found to link.")
 
     print("\nDone.")
 
