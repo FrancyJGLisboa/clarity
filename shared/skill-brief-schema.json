@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FrancyJGLisboa/clarity/shared/skill-brief-schema.json",
+  "title": "Skill Brief v1.1",
+  "description": "Schema for the clarity-to-agent-skill-creator handoff format. A skill brief is a structured document that collapses agent-skill-creator's Phase 1 (API research) entirely, enabling direct implementation from a verified specification.",
+  "type": "object",
+  "required": ["identity", "sources_ingested", "api_decision", "priority_analyses", "command_structure", "output_design", "domain_context", "environment"],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "required": ["skill_name", "description", "activation_keywords", "primary_user"],
+      "properties": {
+        "skill_name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*-skill$",
+          "description": "Kebab-case skill name ending with -skill"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "One-line description written as an activation phrase"
+        },
+        "activation_keywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 3,
+          "description": "Phrases that should trigger this skill automatically"
+        },
+        "primary_user": {
+          "type": "string",
+          "description": "Who invokes this skill and what they already know"
+        }
+      }
+    },
+    "sources_ingested": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "type", "key_takeaway"],
+        "properties": {
+          "source": { "type": "string", "description": "URL or path" },
+          "type": { "type": "string", "enum": ["repo", "api_docs", "local_codebase", "pdf", "url", "free_text"] },
+          "key_takeaway": { "type": "string", "description": "One-line summary of what was extracted" }
+        }
+      },
+      "description": "Every reference /clarity read during INGEST. Agent-skill-creator must NOT re-read these."
+    },
+    "api_decision": {
+      "type": "object",
+      "required": ["selected_api", "base_url", "auth_mechanism", "auth_location", "rationale"],
+      "properties": {
+        "selected_api": { "type": "string" },
+        "base_url": { "type": "string", "format": "uri" },
+        "auth_mechanism": { "type": "string", "enum": ["oauth2", "api_key", "token", "bearer", "none"] },
+        "auth_location": { "type": "string", "description": "Header name or env var name" },
+        "rationale": { "type": "string", "description": "Why this API over alternatives" },
+        "rate_limits": { "type": "string" },
+        "pagination": { "type": "string", "enum": ["cursor", "offset", "none", "unknown"] },
+        "known_quirks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "priority_analyses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "objective", "inputs", "output", "methodology"],
+        "properties": {
+          "name": { "type": "string" },
+          "objective": { "type": "string", "description": "What question this answers" },
+          "inputs": { "type": "string", "description": "What the user provides" },
+          "output": { "type": "string", "description": "What the user gets back" },
+          "methodology": { "type": "string", "description": "Which endpoints, in what order, with what transformations" },
+          "cli_example": { "type": "string" },
+          "output_example": { "type": "string" }
+        }
+      },
+      "minItems": 4,
+      "maxItems": 7,
+      "description": "4-6 analyses covering 80% of use cases, plus a comprehensive report function"
+    },
+    "command_structure": {
+      "type": "object",
+      "required": ["commands", "global_flags"],
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["noun", "verbs"],
+            "properties": {
+              "noun": { "type": "string" },
+              "verbs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["verb", "description"],
+                  "properties": {
+                    "verb": { "type": "string" },
+                    "description": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "global_flags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["flag", "description"],
+            "properties": {
+              "flag": { "type": "string" },
+              "description": { "type": "string" },
+              "default": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "output_design": {
+      "type": "object",
+      "required": ["default_format", "default_fields", "suppressed_fields", "max_output_size"],
+      "properties": {
+        "default_format": { "type": "string", "enum": ["table", "json", "markdown", "csv"] },
+        "default_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 5,
+          "maxItems": 8
+        },
+        "suppressed_fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "max_output_size": { "type": "string" },
+        "error_message_requirements": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "domain_context": {
+      "type": "object",
+      "required": ["terminology", "anti_goals"],
+      "properties": {
+        "terminology": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["term", "meaning"],
+            "properties": {
+              "term": { "type": "string" },
+              "meaning": { "type": "string" }
+            }
+          }
+        },
+        "filtering_conventions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "implicit_requirements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "anti_goals": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "env_vars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "python_dependencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "min_python_version": { "type": "string" },
+        "network_requirements": { "type": "string", "enum": ["public_internet", "corporate_vpn", "local_only"] }
+      }
+    },
+    "complexity": {
+      "type": "string",
+      "enum": ["simple", "moderate", "complex"],
+      "description": "Skill complexity classification. simple: 1-2 operations, single data source. moderate: 3-5 operations, external APIs, transformations. complex: 6+ operations, multiple data sources, multi-step pipelines. Determines which harness patterns the builder must generate."
+    },
+    "prerequisites": {
+      "type": "object",
+      "properties": {
+        "runtime": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Runtime requirements (e.g., 'Python >= 3.10', 'Node >= 18')"
+        },
+        "api_keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "required"],
+            "properties": {
+              "name": { "type": "string" },
+              "how_to_get": { "type": "string" },
+              "required": { "type": "boolean" }
+            }
+          }
+        },
+        "network": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "URLs or domains the skill calls at runtime"
+        },
+        "data_files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files the user must provide"
+        },
+        "os_constraints": { "type": "string" }
+      },
+      "description": "External dependencies the user must have before running the skill"
+    },
+    "harness_requirements": {
+      "type": "object",
+      "properties": {
+        "input_validation": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Validation rules for user inputs (e.g., 'CBOT price must be positive')"
+        },
+        "output_sanity": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Bounds checks on outputs (e.g., 'EXW price between 0 and 500 R$/sc')"
+        },
+        "failure_modes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["trigger", "response"],
+            "properties": {
+              "trigger": { "type": "string" },
+              "response": { "type": "string" }
+            }
+          },
+          "description": "Known failure scenarios and how the skill should handle each"
+        },
+        "retry_policy": {
+          "type": "object",
+          "properties": {
+            "max_retries": { "type": "integer" },
+            "backoff": { "type": "string", "enum": ["exponential", "linear", "none"] },
+            "retry_on": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "description": "Harness patterns the builder must embed as executable code, not instructions"
+    },
+    "source_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "type"],
+        "properties": {
+          "source": { "type": "string", "description": "URL, file path, or description" },
+          "type": { "type": "string", "enum": ["repo", "api_docs", "pdf", "url", "free_text", "local_codebase"] }
+        }
+      },
+      "description": "Explicit list of all reference materials ingested. Used for provenance metadata in the produced skill."
+    },
+    "holdout_summary": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Behavioral areas the holdout scenarios cover, including harness scenarios (invalid input, missing prerequisites). NOT the scenarios themselves."
+    },
+    "clarity_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "contains"],
+        "properties": {
+          "file": { "type": "string" },
+          "contains": { "type": "string" }
+        }
+      }
+    }
+  }
+}

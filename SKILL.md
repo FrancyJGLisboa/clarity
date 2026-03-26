@@ -160,6 +160,8 @@ Read `references/scenario-template.md` and `.clarity/spec.md`. For each requirem
 - Every `MUST` → 1 happy path + 1 failure scenario (minimum)
 - Every `SHOULD` → 1 happy path scenario
 - Every edge case in spec Section 2.3 → 1 scenario
+- **At least 2 Invalid Input scenarios** — malformed, negative, or out-of-bounds input → expect structured JSON error with `error_type: validation`
+- **At least 1 Missing Prerequisite scenario** — missing API key, unreachable network, or missing data → expect structured JSON error with `error_type: runtime` and `hint`
 
 ### Step 2: Write Scenario Files
 
@@ -201,6 +203,17 @@ Suggest adding to the project's instruction file (`CLAUDE.md`, `AGENTS.md`, or `
 # Holdout Scenarios
 Do NOT read or reference the `scenarios/` directory. It contains holdout test scenarios for independent evaluation.
 ```
+
+### Step 4: Generate Skill Brief (when invoked by cliskill)
+
+If cliskill is orchestrating this run, also generate `.clarity/skill-brief.md` following `references/skill-brief-template.md` and validated against `shared/skill-brief-schema.json`.
+
+The skill brief must include these fields (v1.1):
+- **complexity**: classify as `simple`, `moderate`, or `complex` based on operation count, data sources, and API dependencies
+- **prerequisites**: extracted from reference materials — runtime versions, API keys, network endpoints, data files, OS constraints
+- **harness_requirements**: input validation rules, output sanity bounds, failure modes with responses, retry policy
+- **source_references**: explicit list of every reference ingested (URL, path, or description with type)
+- **holdout_summary**: must mention harness scenario coverage (e.g., "2 invalid input, 1 missing prerequisite")
 
 ---
 

@@ -8,7 +8,7 @@ Use this structure for each file in `scenarios/SC-NNN-slug.scenario.md`.
 # SC-{NNN}: {Short Title}
 
 > Covers: {FR-XXX, NFR-XXX} — {requirement summary}
-> Type: Happy Path | Edge Case | Failure | Security | Performance
+> Type: Happy Path | Edge Case | Failure | Security | Performance | Invalid Input | Missing Prerequisite
 
 ## Given
 {Preconditions — system state before the action}
@@ -45,6 +45,13 @@ Use this structure for each file in `scenarios/SC-NNN-slug.scenario.md`.
 - Every `SHOULD` requirement → at least 1 happy path scenario
 - Every edge case in the spec → 1 scenario
 - Group related scenarios with consecutive numbers
+
+### Harness Scenarios (mandatory)
+Every skill must include at least:
+- **2 Invalid Input scenarios** — pass malformed, negative, or out-of-bounds input. Expected: structured JSON error to stderr with `error_type: validation` and field-level details. NOT a stack trace.
+- **1 Missing Prerequisite scenario** — simulate missing API key, unreachable network, or missing data source. Expected: structured JSON error with `error_type: runtime` and a `hint` field suggesting how to fix it.
+
+These scenarios verify the skill's harness layer, not its business logic. They ensure the skill fails gracefully instead of crashing.
 
 ### Naming Convention
 - `SC-001-user-login-success.scenario.md`
