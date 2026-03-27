@@ -74,7 +74,17 @@
           "output": { "type": "string", "description": "What the user gets back" },
           "methodology": { "type": "string", "description": "Which endpoints, in what order, with what transformations" },
           "cli_example": { "type": "string" },
-          "output_example": { "type": "string" }
+          "output_example": { "type": "string" },
+          "acceptance_criteria": {
+            "type": "object",
+            "properties": {
+              "smoke_input": { "type": "string", "description": "Minimal valid CLI invocation for this command" },
+              "smoke_exit_code": { "type": "integer", "default": 0, "description": "Expected exit code from smoke_input" },
+              "smoke_output_contains": { "type": "array", "items": { "type": "string" }, "description": "Strings that must appear in stdout/stderr" },
+              "smoke_output_is_json": { "type": "boolean", "default": false, "description": "If true, stdout must parse as valid JSON" }
+            },
+            "description": "Machine-checkable criteria the BUILD evaluator runs after generating this command's script. Optional — if absent, BUILD falls back to syntax + import checks only."
+          }
         }
       },
       "minItems": 4,

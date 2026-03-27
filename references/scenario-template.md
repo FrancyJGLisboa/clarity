@@ -58,6 +58,25 @@ These scenarios verify the skill's harness layer, not its business logic. They e
 - `SC-002-user-login-wrong-password.scenario.md`
 - `SC-003-user-login-account-locked.scenario.md`
 
+### Build-Time vs Verify-Time Checks
+
+Not all verification happens at the same stage:
+
+**Build-time (fast, per-script, during BUILD phase):**
+- Syntax: does the script parse?
+- Imports: are all dependencies available?
+- CLI: does --help work?
+- Smoke: does a minimal invocation produce expected output shape?
+
+These are defined in `acceptance_criteria` within `priority_analyses` in the skill brief. They catch structural errors immediately.
+
+**Verify-time (thorough, scenario-based, during VERIFY phase):**
+- Holdout scenarios test behavioral correctness
+- Edge cases, failure modes, domain-specific logic
+- These are the `.scenario.md` files in `scenarios/`
+
+**Rule:** Build-time checks verify the script runs. Verify-time scenarios verify the script does the right thing. Do not duplicate.
+
 ### Writing Good Scenarios
 - **Given**: Be specific about data state. Use concrete values, not "some data".
 - **When**: One clear action. If you need multiple actions, split into multiple scenarios.
